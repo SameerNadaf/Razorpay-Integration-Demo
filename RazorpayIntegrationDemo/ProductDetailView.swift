@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ProductDetailView: View {
     let product: Product
+    @StateObject private var paymentManager = RazorpayPaymentManager()
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -22,13 +23,6 @@ struct ProductDetailView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .padding(40)
                                 .frame(width: geometry.size.width, height: geometry.size.height)
-                                .background(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color(.systemGray6), Color(.white)]),
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
                             
                             // Price Tag
                             Text("$\(String(format: "%.2f", product.price))")
@@ -79,8 +73,6 @@ struct ProductDetailView: View {
                         Spacer(minLength: 100)
                     }
                     .padding(24)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                     .offset(y: -30) // Overlap effect
                 }
             }
@@ -96,11 +88,18 @@ struct ProductDetailView: View {
                         .frame(width: 60, height: 60)
                         .background(Color.white)
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                        .shadow(color: Color.primary.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
                 
                 Button(action: {
                     print("Buy now tapped")
+                    paymentManager.openPayment(
+                        amount: product.price,
+                        description: product.description,
+                        image: "https://via.placeholder.com/150", // Or pass an actual URL if available
+                        email: "test@example.com",
+                        contact: "9999999999"
+                    )
                 }) {
                     Text("Buy Now")
                         .font(.headline)
@@ -114,14 +113,15 @@ struct ProductDetailView: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20) // Add bottom padding for better safe area support on some devices
-            .background(
-                LinearGradient(gradient: Gradient(colors: [Color.white.opacity(0), Color.white]), startPoint: .top, endPoint: .bottom)
-                    .frame(height: 100)
-                    .offset(y: 20) // Extend gradient behind safe area
+        }
+        .edgesIgnoringSafeArea(.bottom) // Allow buttons to sit near bottom
+        .alert(isPresented: $paymentManager.showAlert) {
+            Alert(
+                title: Text(paymentManager.isPaymentSuccess ? "Success" : "Failed"),
+                message: Text(paymentManager.alertMessage),
+                dismissButton: .default(Text("OK"))
             )
         }
-        .background(Color(.systemGray6))
-        .edgesIgnoringSafeArea(.bottom) // Allow buttons to sit near bottom
     }
 }
 
